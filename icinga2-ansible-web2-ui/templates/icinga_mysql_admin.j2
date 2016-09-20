@@ -1,0 +1,1 @@
+INSERT INTO icingaweb2.icingaweb_user (name, active, password_hash) VALUES ('{{ icinga2_admin_username }}', 1, '{{ hashed_password.stdout }}') ON DUPLICATE KEY UPDATE password_hash='{{ hashed_password.stdout }}';

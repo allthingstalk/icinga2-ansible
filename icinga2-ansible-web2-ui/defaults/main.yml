@@ -24,3 +24,19 @@ icinga2_web2_ui_rpm:
 
 icinga2_web2_ui_deb:
  - { package: "icingaweb2" }
+
+icinga2_ini_files:
+  icinga2_ini_authentication.j2:
+    /etc/icingaweb2/authentication.ini
+  icinga2_ini_config.j2:
+    /etc/icingaweb2/config.ini
+  icinga2_ini_resources.j2:
+    /etc/icingaweb2/resources.ini
+  icinga2_ini_roles.j2:
+    /etc/icingaweb2/roles.ini
+  icinga2_ini_monitoring_backends.j2:
+    /etc/icingaweb2/modules/monitoring/backends.ini
+  icinga2_ini_monitoring_commandtransports.j2:
+    /etc/icingaweb2/modules/monitoring/commandtransports.ini
+  icinga2_ini_monitoring_config.j2:
+    /etc/icingaweb2/modules/monitoring/config.ini

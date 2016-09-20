@@ -8,17 +8,23 @@
 
 - name: Create a IDO Database for Icinga2
   mysql_db: name={{ icinga2_db }}
+            login_user={{ icinga2_mysql_login_username }}
+            login_password={{ icinga2_mysql_login_password }}
             state=present
   register: icinga_ido_db
 
 - name: Create Icinga2 IDO Database User and configure Grants
   mysql_user: name={{ icinga2_db_user }}
               password={{ icinga2_db_pass }}
+              login_user={{ icinga2_mysql_login_username }}
+              login_password={{ icinga2_mysql_login_password }}
               state=present
               priv="{{ icinga2_db }}.*:GRANT,INSERT,SELECT,UPDATE,DELETE,DROP,CREATE VIEW,INDEX,EXECUTE"
 
 - name: Import the IDO Schema on Icinga Web Database (only once)
   mysql_db: name={{ icinga2_db }}
+            login_user={{ icinga2_mysql_login_username }}
+            login_password={{ icinga2_mysql_login_password }}
             state=import
             target={{ icinga2_web_mysql_schema_debian }}
   when: icinga_ido_db.changed == true
@@ -46,18 +52,24 @@
 
 - name: Create a Web Database for Icinga2
   mysql_db: name={{ icinga2_web2_db }}
+            login_user={{ icinga2_mysql_login_username }}
+            login_password={{ icinga2_mysql_login_password }}
             state=present
   register: icinga_web_db
 
 - name: Create Icinga2 Web Database User and configure Grants
   mysql_user: name={{ icinga2_web2_db_user }}
               password={{ icinga2_web2_db_pass }}
+              login_user={{ icinga2_mysql_login_username }}
+              login_password={{ icinga2_mysql_login_password }}
               state=present
               priv="{{ icinga2_web2_db }}.*:GRANT,INSERT,SELECT,UPDATE,DELETE,DROP,CREATE VIEW,INDEX,EXECUTE"
 
 - name: Import the Web Schema on Icinga Web Database (only once)
   mysql_db: name={{ icinga2_web2_db }}
             state=import
+            login_user={{ icinga2_mysql_login_username }}
+            login_password={{ icinga2_mysql_login_password }}
             target={{ icinga2_web2_mysql_schema_debian }}
   when: icinga_web_db.changed == true
 
@@ -81,19 +93,35 @@
   user: name=www-data
         groups=icingaweb2
 
-- name: Adjust Directory Owener and Group
+- name: Adjust Directory Owner and Group
   file: path=/etc/icingaweb2/modules owner=www-data group=icingaweb2 mode=0755
         state=directory
         recurse=yes
 
-- name: Create Directory Owener and Group
+- name: Create Directory Owner and Group
   file: path=/etc/icingaweb2/modules/{{ item }} owner=www-data group=icingaweb2 mode=0755
         state=directory
   with_items:
     - monitoring
     - translation
 
-- name: Icinga Web2 Installation finished (Debian)
-  debug: msg="Now generate a token with 'icingacli setup token create' and go at http://IP//icingaweb2/setup to continue the installation"
-  tags: icinga2-ansible-web2-ui-install
+- name: Encrypt icingaweb2 admin password
+  shell: openssl passwd -1 {{ icinga2_admin_password }}
+  register: hashed_password
 
+- name: Create icingaweb2 admin user insert template
+  template: src=templates/icinga_mysql_admin.j2 dest=/tmp/icinga_admin.sql
+
+- name: Create icingaweb2 admin user
+  mysql_db: name=icingaweb2
+            state=import
+            target=/tmp/icinga_admin.sql
+            login_user={{ icinga2_mysql_login_username }}
+            login_password={{ icinga2_mysql_login_password }}
+
+- name: Copy icingaweb2 ini files
+  template: src=templates/{{ item.key }} dest={{ item.value }} owner=www-data group=icingaweb2
+  with_dict: "{{ icinga2_ini_files }}"
+
+- name: Activate icingaweb2 monitoring
+  file: src=/usr/share/icingaweb2/modules/monitoring dest=/etc/icingaweb2/enabledModules/monitoring state=link
