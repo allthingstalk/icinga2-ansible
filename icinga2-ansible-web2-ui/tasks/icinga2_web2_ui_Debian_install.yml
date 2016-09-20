@@ -6,8 +6,9 @@
   apt: name=icinga2-ido-mysql
        state=latest
 
-- name: Create a IDO Database for Icinga2
+- name: Create an IDO Database for Icinga2
   mysql_db: name={{ icinga2_db }}
+            password={{ icinga2_db_pass }}
             login_user={{ icinga2_mysql_login_username }}
             login_password={{ icinga2_mysql_login_password }}
             state=present
