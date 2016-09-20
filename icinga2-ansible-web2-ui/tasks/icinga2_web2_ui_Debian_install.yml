@@ -113,7 +113,7 @@
   template: src=templates/icinga_mysql_admin.j2 dest=/tmp/icinga_admin.sql
 
 - name: Create icingaweb2 admin user
-  mysql_db: name=icingaweb2
+  mysql_db: name={{ icinga2_web2_db }}
             state=import
             target=/tmp/icinga_admin.sql
             login_user={{ icinga2_mysql_login_username }}
