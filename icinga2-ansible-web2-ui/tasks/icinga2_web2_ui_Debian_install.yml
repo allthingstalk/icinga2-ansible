@@ -106,7 +106,7 @@
     - translation
 
 - name: Encrypt icingaweb2 admin password
-  shell: openssl passwd -1 {{ icinga2_admin_password }}
+  shell: openssl passwd -1 {{ icinga2_web2_admin_password }}
   register: hashed_password
 
 - name: Create icingaweb2 admin user insert template
