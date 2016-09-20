@@ -123,5 +123,10 @@
   template: src=templates/{{ item.key }} dest={{ item.value }} owner=www-data group=icingaweb2
   with_dict: "{{ icinga2_ini_files }}"
 
+- name: Create icingaweb2 enabledModules directory
+  file: path=/etc/icingaweb2/enabledModules owner=www-data group=icingaweb2 mode=0755
+        state=directory
+        recurse=yes
+
 - name: Activate icingaweb2 monitoring
   file: src=/usr/share/icingaweb2/modules/monitoring dest=/etc/icingaweb2/enabledModules/monitoring state=link
