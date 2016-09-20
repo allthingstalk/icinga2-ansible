@@ -1,0 +1,31 @@
+---
+- name: Install https for apt (Ubuntu)
+  apt: name=apt-transport-https state=present
+
+- name: Get Icinga2 Apt Key (Ubuntu)
+  apt_key: url={{ icinga2_key }}
+           state=present
+  tags: addkey
+
+- name: Get Icinga2 Apt Repos for Debian OS family
+  apt_repository: repo='{{ item.repo }}'
+                  update_cache=yes
+                  state=present
+  with_items: '{{ icinga2_deb_repos }}'
+
+- name: Add Icinga repository (Ubuntu)
+  apt_repository: repo='{{ icinga2_ubuntu_repo }}'
+                  update_cache=yes
+                  state=present
+
+- name: Install Icinga2 on Ubuntu OS family
+  apt: pkg={{ item.package }}
+       update_cache=yes
+       state=latest
+       install_recommends=no
+  with_items: '{{ icinga2_pkg }}'
+
+- name: Start Icinga2
+  service: name=icinga2
+           state=started
+           enabled=yes
