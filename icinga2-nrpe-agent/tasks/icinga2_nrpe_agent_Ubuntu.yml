@@ -1,5 +1,6 @@
 ---
-- name: Install Nrpe and Plugins
+
+- name: Install Nrpe and Plugins (Ubuntu)
   apt: pkg={{ item.package }}
        state=latest
        update_cache=yes
@@ -8,7 +9,14 @@
   tags:
    - nrpe_agent_install
 
-- name: Copy Nrpe Configuration
+- name: Install check_mem (Ubuntu)
+  template: src=check_mem
+            mode=0755
+            owner=root
+            group=root
+            dest="{{ nrpe_agent_plugins_x86_64 }}"
+
+- name: Copy Nrpe Configuration (Ubuntu)
   template: src=nrpe.cfg.j2
             dest={{ nrpe_agent_config }}
             owner=root
@@ -18,7 +26,7 @@
   tags:
    - nrpe_agent_config
 
-- name: Fix nagios-nrpe-server init script
+- name: Fix nagios-nrpe-server init script (Ubuntu)
   template: src=nagios-nrpe-server.j2
             dest="/etc/init.d/nagios-nrpe-server"
 
