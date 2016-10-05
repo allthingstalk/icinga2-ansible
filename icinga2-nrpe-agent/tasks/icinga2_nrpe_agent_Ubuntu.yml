@@ -15,7 +15,14 @@
             group=root
             mode=0644
             backup=yes
-  notify:
-   - restart nagios-nrpe-server
   tags:
    - nrpe_agent_config
+
+- name: Fix nagios-nrpe-server init script
+  template: src=nagios-nrpe-server.j2
+            dest="/etc/init.d/nagios-nrpe-server"
+
+- name: Start nagios-nrpe-server
+  shell: systemctl daemon-reload
+  notify:
+    - restart nagios-nrpe-server

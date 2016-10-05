@@ -3,10 +3,10 @@
 
 - name: restart nrpe
   service: name=nrpe
-           state=restarted 
+           state=restarted
            enabled=yes
 
 - name: restart nagios-nrpe-server
   service: name=nagios-nrpe-server
-           state=restarted 
+           state=restarted
            enabled=yes
