@@ -1,0 +1,107 @@
+---
+# Follows
+# https://github.com/Icinga/icingaweb2-module-director/blob/master/doc/02-Installation.md
+
+- name: Create Director database
+  mysql_db: name={{ icinga2_director_db }}
+            login_user={{ icinga2_mysql_login_username }}
+            login_password={{ icinga2_mysql_login_password }}
+            state=present
+  register: icinga_director_db
+
+- name: Create Icinga2 Director Database User and configure Grants
+  mysql_user: name={{ icinga2_director_db_user }}
+              password={{ icinga2_director_db_pass }}
+              login_user={{ icinga2_mysql_login_username }}
+              login_password={{ icinga2_mysql_login_password }}
+              state=present
+              priv="{{ icinga2_director_db }}.*:ALL,GRANT"
+
+- name: Add resource to /etc/icingaweb2/modules/director/config.ini
+  ini_file: dest=/etc/icingaweb2/modules/director/config.ini section=db option=resource value="Director DB"
+
+- name: Add Director DB to /etc/icingaweb2/resources.ini
+  ini_file: dest=/etc/icingaweb2/resources.ini section="Director DB" option={{ item.key }} value="{{ item.value }}"
+  with_dict:
+    type: db
+    db: mysql
+    host: localhost
+    dbname: "{{ icinga2_director_db }}"
+    username: "{{ icinga2_director_db_user }}"
+    password: "{{ icinga2_director_db_pass }}"
+    charset: "utf8"
+
+- name: Install unzip
+  apt: name=unzip state=installed
+
+- name: Install php curl
+  apt: name=php-curl
+
+- name: Reload apache
+  service: name=apache2 state=restarted
+
+- name: Fetch Director module
+  get_url:
+    url: https://github.com/Icinga/icingaweb2-module-director/archive/v1.2.0.zip
+    dest: /tmp/director.zip
+
+- name: Remove old director
+  file: path=/usr/share/icingaweb2/modules/director state=absent
+
+- name: Install Director module (PART 1, workaround, unarchive not working)
+  command: unzip /tmp/director.zip -d /usr/share/icingaweb2/modules/
+
+- name: Install Director module (PART 2, workaround, unarchive not working)
+  command: mv /usr/share/icingaweb2/modules/icingaweb2-module-director-1.2.0 /usr/share/icingaweb2/modules/director
+
+- name: Install Director module (PART 3, workaround, unarchive not working)
+  command: rm /tmp/director.zip
+
+- name: Ensure director etc dir
+  file: path=/etc/icingaweb2/modules/director state=directory mode=0755
+
+- name: Add resource to /etc/icingaweb2/modules/director/config.ini
+  ini_file: dest=/etc/icingaweb2/modules/director/config.ini section=db option=resource value="Director DB"
+
+- name: Add icinga director endpoint & zone
+  blockinfile:
+    dest: /etc/icinga2/zones.conf
+    marker: "/* {mark} ANSIBLE MANAGED BLOCK */"
+    block: |
+      object Zone "director-global" {
+        global = true
+        endpoints = [ "master" ]
+      }
+
+      object Endpoint "master" {
+        host = "localhost"
+      }
+
+- name: Add icinga director ApiUser
+  blockinfile:
+    dest: /etc/icinga2/conf.d/api-users.conf
+    marker: "/* {mark} ANSIBLE MANAGED BLOCK */"
+    block: |
+      object ApiUser "director" {
+        password = "{{ icinga2_director_api_pass }}"
+        permissions = [ "*" ]
+      }
+
+- name: Enable icinga API
+  command: icinga2 feature enable api
+
+- name: Restart icinga
+  service: name=icinga2 state=restarted
+
+- name: Enable icinga director
+  command: icingacli module enable director
+
+- name: Migrate director
+  command: icingacli director migration run
+
+- name: Kickstart director
+  command: icingacli director kickstart run
+
+
+# TODO
+# director import hosts
